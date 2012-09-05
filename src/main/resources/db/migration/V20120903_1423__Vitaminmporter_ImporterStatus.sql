@@ -5,4 +5,4 @@ CREATE TABLE vitaminimporterImportStatus (
     Outcome VARCHAR(20),
 
     INDEX (StartTime)
-);
+) ENGINE=InnoDB COLLATE=utf8_bin;

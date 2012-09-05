@@ -70,7 +70,7 @@ public class VitaminGrunddataRecordSpecsTest {
 
 	@Test
 	public void parsesStyrkeNumerisk() {
-		assertEquals(0L, record.get("styrkeNumerisk"));
+		assertEquals(0.0, record.get("styrkeNumerisk"));
 	}
 
 	@Test

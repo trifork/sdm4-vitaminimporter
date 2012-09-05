@@ -16,7 +16,7 @@ public class VitaminRecordSpecs {
 		    field("formKode", 7),
 		    field("kodeYderligereFormOplysninger", 7),
             field("styrkeTekst", 20),
-            field("styrkeNumerisk", 10).numerical(),
+            field("styrkeNumerisk", 10).decimal10_3(),
             field("styrkeEnhed", 3),
             field("mtIndehaverKode", 6).numerical(),
             field("repraesentantDistributoerKode", 6).numerical(),

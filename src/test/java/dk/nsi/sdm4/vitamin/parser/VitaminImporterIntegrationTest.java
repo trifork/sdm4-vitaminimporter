@@ -1,8 +1,7 @@
 package dk.nsi.sdm4.vitamin.parser;
 
-import static org.junit.Assert.assertEquals;
-
-import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
+import dk.nsi.sdm4.testutils.TestDbConfiguration;
+import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -14,12 +13,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import dk.nsi.sdm4.core.persistence.AuditingPersister;
-import dk.nsi.sdm4.testutils.TestDbConfiguration;
-import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
-
 import java.io.File;
 import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
@@ -49,16 +46,22 @@ public class VitaminImporterIntegrationTest
 		assertEquals("Drogen`s Stærk Baldrian citrm.", jdbcTemplate.queryForObject("SELECT Navn FROM VitaminGrunddata where DrugID=52610061197", String.class));
 		assertEquals("Ægte Venustorn", jdbcTemplate.queryForObject("SELECT Navn FROM VitaminGrunddata where DrugID=52610011893", String.class));
 		assertEquals("orale dråber, opløsn", jdbcTemplate.queryForObject("SELECT FormTekst FROM VitaminGrunddata where DrugID=52610016293", String.class));
-
-
 	}
-
 
 	@Test
 	public void persistsKarantaeneData() throws Exception {
 		importFile("data/vitaminer/nat01.txt");
 
 		assertEquals("20061009", jdbcTemplate.queryForObject("SELECT KarantaeneDato FROM VitaminGrunddata where DrugID=52610057196", String.class));
+	}
+
+	@Test
+	public void makesNoExtraRowsWhenImportingSameDataTwice() throws Exception {
+		importFile("data/historik/nat01-1.txt");
+		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
+
+		importFile("data/historik/nat01-1.txt");
+		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 	}
 
 	private void importFile(String filePath) throws Exception {
