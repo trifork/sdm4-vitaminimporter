@@ -1,5 +1,7 @@
 package dk.nsi.sdm4.vitamin.config;
 
+import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
+import org.joda.time.Instant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,8 +18,8 @@ public class VitaminimporterApplicationConfig {
 	}
 
 	@Bean
-	public Persister persister() {
-		return new AuditingPersister();
+	public RecordPersister persister() {
+		return new RecordPersister(Instant.now());
 	}
 
 }

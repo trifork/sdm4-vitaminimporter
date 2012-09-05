@@ -15,19 +15,18 @@ CREATE TABLE VitaminGrunddata (
     StyrkeEnhed VARCHAR(3),
     MTIndehaverKode BIGINT(6),
     RepraesentantDistributoerKode BIGINT(6),
-    ATCKode VARCHAR(6),
+    ATCKode VARCHAR(8),
     AdministrationsvejKode VARCHAR(8),
-    Trafikadvarsel BOOLEAN,
+    Trafikadvarsel VARCHAR(1),
     Substitution VARCHAR(1),
     Substitutionsgruppe VARCHAR(4),
     Dosisdispensering VARCHAR(1),
-    KarantaeneDato DATE,
+    KarantaeneDato VARCHAR(8),
     Sletningsstatus VARCHAR(20),
 
-    CreatedDate DATETIME NOT NULL,
     ModifiedDate DATETIME NOT NULL,
     ValidFrom DATETIME NOT NULL,
-    ValidTo DATETIME NOT NULL,
+    ValidTo DATETIME,
 
     INDEX (DrugId, ValidTo, ValidFrom)
 );
@@ -40,10 +39,9 @@ CREATE TABLE VitaminFirmadata (
     LangtFirmaMaerke VARCHAR(32),
     ParallelimportKode VARCHAR(2),
 
-    CreatedDate DATETIME NOT NULL,
     ModifiedDate DATETIME NOT NULL,
     ValidFrom DATETIME NOT NULL,
-    ValidTo DATETIME NOT NULL,
+    ValidTo DATETIME,
 
     INDEX (FirmaId, ValidTo, ValidFrom)
 );
@@ -55,10 +53,9 @@ CREATE TABLE VitaminUdgaaedeNavne (
     AendringsDato DATE,
     TidligereNavn VARCHAR(50),
 
-    CreatedDate DATETIME NOT NULL,
     ModifiedDate DATETIME NOT NULL,
     ValidFrom DATETIME NOT NULL,
-    ValidTo DATETIME NOT NULL,
+    ValidTo DATETIME,
 
     INDEX (DrugId, ValidTo, ValidFrom)
 );
@@ -71,10 +68,9 @@ CREATE TABLE VitaminIndholdsstoffer (
     Substansgruppe VARCHAR(100),
     Substans VARCHAR(150),
 
-    CreatedDate DATETIME NOT NULL,
     ModifiedDate DATETIME NOT NULL,
     ValidFrom DATETIME NOT NULL,
-    ValidTo DATETIME NOT NULL,
+    ValidTo DATETIME,
 
     INDEX (DrugId, ValidTo, ValidFrom)
 );
