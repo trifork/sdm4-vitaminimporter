@@ -48,7 +48,7 @@ CREATE TABLE VitaminFirmadata (
     INDEX (FirmaId, ValidTo, ValidFrom)
 );
 
-CREATE TABLE VitaminUdgaadeNavne (
+CREATE TABLE VitaminUdgaaedeNavne (
     VitaminUdgaedeNavnePID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     DrugID BIGINT(12),
