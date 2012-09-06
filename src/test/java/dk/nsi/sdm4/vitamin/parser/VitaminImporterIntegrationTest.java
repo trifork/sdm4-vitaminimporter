@@ -27,7 +27,7 @@ public class VitaminImporterIntegrationTest
 	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
-	private VitaminImporter importer;
+	private VitaminParser parser;
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -69,7 +69,7 @@ public class VitaminImporterIntegrationTest
 		File datasetDir = temporaryFolder.newFolder();
 		FileUtils.copyURLToFile(resource, new File(datasetDir, lastPathSegment(filePath)));
 
-		importer.process(datasetDir);
+		parser.process(datasetDir);
 	}
 
 	private String lastPathSegment(String filePath) {

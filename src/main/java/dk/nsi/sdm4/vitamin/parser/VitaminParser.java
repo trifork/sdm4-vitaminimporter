@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.File;
 import java.util.List;
 
-public class VitaminImporter implements Parser {
+public class VitaminParser implements Parser {
 	@Autowired
 	private SLALogger slaLogger;
 
@@ -28,7 +28,7 @@ public class VitaminImporter implements Parser {
 	private static final String FILE_ENCODING = "CP865";
 
 	public void process(File datadir) throws ParserException {
-		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminImporter", "All");
+		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
 
 		try {
 			SingleLineRecordParser grunddataParser = new SingleLineRecordParser(VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
@@ -52,7 +52,7 @@ public class VitaminImporter implements Parser {
 			slaLogItem.setCallResultOk();
 			slaLogItem.store();
 		} catch (Exception e) {
-			slaLogItem.setCallResultError("VitaminImporter failed - Cause: " + e.getMessage());
+			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
 
 			throw new ParserException(e);
