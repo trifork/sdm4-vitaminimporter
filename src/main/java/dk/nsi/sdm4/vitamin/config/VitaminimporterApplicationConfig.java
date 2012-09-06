@@ -16,11 +16,6 @@ public class VitaminimporterApplicationConfig {
 	}
 
 	@Bean
-	public RecordPersister persister() {
-		return new RecordPersister(Instant.now());
-	}
-
-	@Bean
 	public RecordFetcher fetcher() {
 		return new RecordFetcher();
 	}
