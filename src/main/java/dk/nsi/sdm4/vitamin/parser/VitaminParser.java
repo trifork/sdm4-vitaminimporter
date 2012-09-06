@@ -6,11 +6,13 @@ import dk.nsi.sdm4.core.parser.SingleLineRecordParser;
 import dk.nsi.sdm4.core.persistence.recordpersister.Record;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordFetcher;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
+import dk.nsi.sdm4.core.persistence.recordpersister.RecordSpecification;
 import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
 import java.util.List;
@@ -23,6 +25,9 @@ public class VitaminParser implements Parser {
 	private RecordPersister persister;
 
 	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
 	private RecordFetcher fetcher;
 
 	private static final String FILE_ENCODING = "CP865";
@@ -31,21 +36,25 @@ public class VitaminParser implements Parser {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
 
 		try {
-			SingleLineRecordParser grunddataParser = new SingleLineRecordParser(VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+			RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
+			SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
 
 			File grunddataFile = datadir.listFiles()[0];
 			List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
 			for (String line : lines) {
 				Record record = grunddataParser.parseLine(line);
-				Record existingRecord = fetcher.fetchCurrent(record.get("drugID")+"", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+				Record existingRecord = fetcher.fetchCurrent(record.get("drugID")+"", spec);
 				if (existingRecord != null) {
 					if (existingRecord.equals(record)) {
 						// no need to do anything
 					} else {
-						// TODO: update existing record's validTo, insert new record
+						jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
+								persister.getTransactionTime().toDateTime().toDate(),
+								existingRecord.get(spec.getKeyColumn()));
+						persister.persist(record, spec);
 					}
 				} else {
-					persister.persist(record, VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+					persister.persist(record, spec);
 				}
 			}
 

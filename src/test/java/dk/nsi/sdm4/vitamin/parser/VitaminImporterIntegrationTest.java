@@ -1,8 +1,11 @@
 package dk.nsi.sdm4.vitamin.parser;
 
+import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
 import dk.nsi.sdm4.testutils.TestDbConfiguration;
 import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
 import org.apache.commons.io.FileUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Instant;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.net.URL;
+import java.sql.Timestamp;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,6 +32,9 @@ public class VitaminImporterIntegrationTest
 
 	@Autowired
 	private VitaminParser parser;
+
+	@Autowired
+	private RecordPersister persister;
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -62,6 +69,23 @@ public class VitaminImporterIntegrationTest
 
 		importFile("data/historik/nat01-1.txt");
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
+	}
+
+	@Test
+	public void closesExistingRowAndmakesNewRowWhenImportingSameDrugWithChangedData() throws Exception {
+		importFile("data/historik/nat01-1.txt");
+		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
+		long oldestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata");
+
+		importFile("data/historik/nat01-2.txt");
+		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
+		long newestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL");
+
+		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
+		Timestamp expectedTimestamp = new Timestamp(persisterTimeWithMillisTruncated.getMillis());
+		assertEquals(expectedTimestamp, jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, oldestPid));
+		assertEquals(expectedTimestamp, jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, newestPid));
+		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where VitaminGrunddataPID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
 	}
 
 	private void importFile(String filePath) throws Exception {

@@ -24,10 +24,10 @@ public class VitaminRecordSpecs {
             field("administrationsvejKode", 8),
             field("trafikadvarsel", 1),
             field("substitution", 1),
-		    field("blank", 3).doNotPersist(),
+		    field("blank", 3).ignored(),
             field("substitutionsgruppe", 4),
             field("dosisdispensering", 1),
-		    field("blank", 8).doNotPersist(),
+		    field("blank", 8).ignored(),
 		    field("karantaeneDato", 8),
             field("sletningsstatus", 0));
     
