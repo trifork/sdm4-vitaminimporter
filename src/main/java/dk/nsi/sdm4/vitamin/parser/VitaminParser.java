@@ -13,18 +13,18 @@ import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class VitaminParser implements Parser {
+	private static final Logger log = Logger.getLogger(VitaminParser.class);
+
 	@Autowired
 	private SLALogger slaLogger;
 
@@ -37,16 +37,48 @@ public class VitaminParser implements Parser {
 	@Autowired
 	private RecordFetcher fetcher;
 
+	private final Map<String, RecordSpecification> specsForFiles = new HashMap<String, RecordSpecification>() {
+		{
+			put("nat01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+			put("rad01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+			put("vit01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+
+			put("nat09.txt", VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+			put("rad09.txt", VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+			put("vit09.txt", VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+
+			put("nat10.txt", VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+			put("rad10.txt", VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+			put("vit10.txt", VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+
+			put("nat30.txt", VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
+			put("vit30.txt", VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
+		}
+	};
+
 	private static final String FILE_ENCODING = "CP865";
 
 	public void process(File datadir) throws ParserException {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
-		RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
 
 		validateDataset(datadir);
 
 		try {
-			processSingleFile(datadir.listFiles()[0], spec);
+			for (File file : datadir.listFiles()) {
+
+				RecordSpecification spec = specsForFiles.get(file.getName());
+				if (spec != null) {
+					processSingleFile(file, spec);
+				} else {
+					// hvis vi ikke har nogen spec, skal filen ikke processeres.
+					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en forventet situation
+					if (log.isDebugEnabled()) {
+						log.debug("Ignoring file " + file.getAbsolutePath());
+					}
+				}
+
+			}
+
 
 			slaLogItem.setCallResultOk();
 			slaLogItem.store();
@@ -62,7 +94,7 @@ public class VitaminParser implements Parser {
 	 * @throws InvalidVitaminDatasetException if a required file is missing
 	 */
 	private void validateDataset(File datadir) {
-		Set<String> requiredFileNames = new HashSet<String>(Arrays.asList("nat01.txt", "nat09.txt", "nat10.txt", "nat30.txt", "rad01.txt", "rad09.txt", "rad10.txt", "vit01.txt", "vit09.txt", "vit10.txt", "vit30.txt"));
+		Set<String> requiredFileNames = new HashSet<String>(specsForFiles.keySet());
 		File[] actualFiles = datadir.listFiles();
 		Set<String> actualFilenames = new HashSet<String>();
 		for (File actualFile : actualFiles) {
