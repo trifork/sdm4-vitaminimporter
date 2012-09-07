@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,32 +39,26 @@ public class VitaminParser implements Parser {
 
 	public void process(File datadir) throws ParserException {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
+		RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
 
 		try {
-			RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
-			SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
-			Set<Long> drugidsFromFile = new HashSet<Long>();
+			processSingleFile(datadir.listFiles()[0], spec);
 
-			File grunddataFile = datadir.listFiles()[0];
-			List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
-			for (String line : lines) {
-				Record record = grunddataParser.parseLine(line);
-				drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
-				Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
-				if (existingRecord != null) {
-					if (existingRecord.equals(record)) {
-						// no need to do anything
-					} else {
-						jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
-								persister.getTransactionTime().toDateTime().toDate(),
-								existingRecord.get(spec.getKeyColumn()));
-						persister.persist(record, spec);
-					}
-				} else {
-					persister.persist(record, spec);
-				}
-			}
+			slaLogItem.setCallResultOk();
+			slaLogItem.store();
+		} catch (Exception e) {
+			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
+			slaLogItem.store();
 
+			throw new ParserException(e);
+		}
+	}
+
+	private void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
+		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser importer of file", file.getName());
+
+		try {
+			Set<Long> drugidsFromFile = parseAndPersistFile(file, spec);
 			invalidateRecordsRemovedFromFile(drugidsFromFile, spec);
 
 			slaLogItem.setCallResultOk();
@@ -73,6 +69,32 @@ public class VitaminParser implements Parser {
 
 			throw new ParserException(e);
 		}
+	}
+
+	private Set<Long> parseAndPersistFile(File file, RecordSpecification spec) throws IOException, SQLException {
+		SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
+		Set<Long> drugidsFromFile = new HashSet<Long>();
+
+		File grunddataFile = file;
+		List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
+		for (String line : lines) {
+			Record record = grunddataParser.parseLine(line);
+			drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
+			Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
+			if (existingRecord != null) {
+				if (existingRecord.equals(record)) {
+					// no need to do anything
+				} else {
+					jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
+							persister.getTransactionTime().toDateTime().toDate(),
+							existingRecord.get(spec.getKeyColumn()));
+					persister.persist(record, spec);
+				}
+			} else {
+				persister.persist(record, spec);
+			}
+		}
+		return drugidsFromFile;
 	}
 
 	private void invalidateRecordsRemovedFromFile(Set<Long> idsFromFile, RecordSpecification spec) {
