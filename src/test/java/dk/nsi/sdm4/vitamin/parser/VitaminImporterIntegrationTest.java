@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.net.URL;
 import java.sql.Timestamp;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 
@@ -81,11 +82,47 @@ public class VitaminImporterIntegrationTest
 		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 		long newestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL");
 
-		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
-		Timestamp expectedTimestamp = new Timestamp(persisterTimeWithMillisTruncated.getMillis());
-		assertEquals(expectedTimestamp, jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, oldestPid));
-		assertEquals(expectedTimestamp, jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, newestPid));
+		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, oldestPid));
+		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, newestPid));
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where VitaminGrunddataPID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
+	}
+
+	@Test
+	public void closesExistingRowWhenDrugDisappearsFromDataFile() throws Exception {
+		importFile("data/sletning/nat01-1.txt");
+		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata WHERE ValidTo IS NULL")); // both drugs should be valid
+
+		importFile("data/sletning/nat01-slettet.txt"); // i denne fil findes Drug med DrugID 28116104107 ikke længere
+		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata")); // no rows should be deleted
+
+		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where DrugID = ?", Timestamp.class, "28116104107"));
+	}
+
+	@Test
+	public void closesNewestRowWhenDrugWithHistoryDisappearsFromFile() throws Exception {
+		importFile("data/opdatering-og-sletning/nat01-1.txt");
+		long pidForOriginalRecord = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL");
+
+		persister.resetTransactionTime();
+		Timestamp expectedValidToForOriginalRecord = getTimestampFromPersister();
+		importFile("data/opdatering-og-sletning/nat01-2.txt");
+		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
+		long pidForDeletedRecord = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL"); // bliver slettet med import af nat01-slettet.txt
+
+		Thread.sleep(1); // to make sure we get distinct timestamps in the database
+
+		persister.resetTransactionTime();
+		Timestamp expectedValidToForDeletedRecord = getTimestampFromPersister();
+		importFile("data/opdatering-og-sletning/nat01-slettet.txt");
+
+		assertEquals(expectedValidToForOriginalRecord, jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, pidForOriginalRecord));
+		assertEquals(expectedValidToForDeletedRecord, jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, pidForDeletedRecord));
+	}
+
+
+	private Timestamp getTimestampFromPersister() {
+		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
+		return new Timestamp(persisterTimeWithMillisTruncated.getMillis());
 	}
 
 	private void importFile(String filePath) throws Exception {
@@ -101,5 +138,4 @@ public class VitaminImporterIntegrationTest
 
 		return segments[segments.length - 1];
 	}
-
 }

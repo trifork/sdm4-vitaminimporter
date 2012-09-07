@@ -11,11 +11,14 @@ import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class VitaminParser implements Parser {
 	@Autowired
@@ -38,12 +41,14 @@ public class VitaminParser implements Parser {
 		try {
 			RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
 			SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
+			Set<Long> drugidsFromFile = new HashSet<Long>();
 
 			File grunddataFile = datadir.listFiles()[0];
 			List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
 			for (String line : lines) {
 				Record record = grunddataParser.parseLine(line);
-				Record existingRecord = fetcher.fetchCurrent(record.get("drugID")+"", spec);
+				drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
+				Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
 				if (existingRecord != null) {
 					if (existingRecord.equals(record)) {
 						// no need to do anything
@@ -58,6 +63,8 @@ public class VitaminParser implements Parser {
 				}
 			}
 
+			invalidateRecordsRemovedFromFile(drugidsFromFile, spec);
+
 			slaLogItem.setCallResultOk();
 			slaLogItem.store();
 		} catch (Exception e) {
@@ -65,6 +72,16 @@ public class VitaminParser implements Parser {
 			slaLogItem.store();
 
 			throw new ParserException(e);
+		}
+	}
+
+	private void invalidateRecordsRemovedFromFile(Set<Long> idsFromFile, RecordSpecification spec) {
+		Set<Long> idsFromDb = new HashSet<Long>(jdbcTemplate.queryForList("SELECT " + spec.getKeyColumn() + " from " + spec.getTable() + " WHERE ValidTo IS NULL", Long.class));
+		idsFromDb.removeAll(idsFromFile);
+
+		Set<Long> idsToBeRemoved = idsFromDb;
+		if (!idsToBeRemoved.isEmpty()) {
+			jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ? WHERE " + spec.getKeyColumn() + " IN (" + StringUtils.join(idsToBeRemoved, ',')  + ") AND ValidTo IS NULL", persister.getTransactionTime().toDateTime().toDate());
 		}
 	}
 
