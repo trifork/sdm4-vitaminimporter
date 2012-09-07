@@ -7,6 +7,7 @@ import dk.nsi.sdm4.core.persistence.recordpersister.Record;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordFetcher;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordSpecification;
+import dk.nsi.sdm4.vitamin.exception.InvalidVitaminDatasetException;
 import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
@@ -18,6 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +43,8 @@ public class VitaminParser implements Parser {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
 		RecordSpecification spec = VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC;
 
+		validateDataset(datadir);
+
 		try {
 			processSingleFile(datadir.listFiles()[0], spec);
 
@@ -51,6 +55,24 @@ public class VitaminParser implements Parser {
 			slaLogItem.store();
 
 			throw new ParserException(e);
+		}
+	}
+
+	/**
+	 * @throws InvalidVitaminDatasetException if a required file is missing
+	 */
+	private void validateDataset(File datadir) {
+		Set<String> requiredFileNames = new HashSet<String>(Arrays.asList("nat01.txt", "nat09.txt", "nat10.txt", "nat30.txt", "rad01.txt", "rad09.txt", "rad10.txt", "vit01.txt", "vit09.txt", "vit10.txt", "vit30.txt"));
+		File[] actualFiles = datadir.listFiles();
+		Set<String> actualFilenames = new HashSet<String>();
+		for (File actualFile : actualFiles) {
+			actualFilenames.add(actualFile.getName());
+		}
+
+		requiredFileNames.removeAll(actualFilenames);
+
+		if (!requiredFileNames.isEmpty()) {
+			throw new InvalidVitaminDatasetException("Missing files " + requiredFileNames + " from data directory " + datadir.getAbsolutePath());
 		}
 	}
 
