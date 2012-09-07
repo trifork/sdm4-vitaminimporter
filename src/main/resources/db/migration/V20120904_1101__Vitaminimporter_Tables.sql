@@ -21,8 +21,6 @@ CREATE TABLE VitaminGrunddata (
     Substitution VARCHAR(1),
     Substitutionsgruppe VARCHAR(4),
     Dosisdispensering VARCHAR(1),
-    KarantaeneDato VARCHAR(8),
-    Sletningsstatus VARCHAR(20),
 
     ModifiedDate DATETIME NOT NULL,
     ValidFrom DATETIME NOT NULL,
