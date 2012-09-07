@@ -28,8 +28,7 @@ public class VitaminRecordSpecs {
             field("substitutionsgruppe", 4),
             field("dosisdispensering", 1),
 		    field("blank", 8).ignored(),
-		    field("karantaeneDato", 8),
-            field("sletningsstatus", 0));
+		    field("karantaeneDato", 8));
     
     public static final RecordSpecification FIRMADATA_RECORD_SPEC = RecordSpecification.createSpecification("VitaminFirmadata", "firmaID", 
             field("firmaID", 0),
