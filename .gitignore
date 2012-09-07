@@ -12,3 +12,5 @@
 release.properties
 pom.xml.releaseBackup
 *~
+*/.~*
+
