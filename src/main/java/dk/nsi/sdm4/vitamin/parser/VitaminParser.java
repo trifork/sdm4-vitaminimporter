@@ -54,7 +54,7 @@ public class VitaminParser implements Parser {
 		}
 	}
 
-	private void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
+	void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser importer of file", file.getName());
 
 		try {

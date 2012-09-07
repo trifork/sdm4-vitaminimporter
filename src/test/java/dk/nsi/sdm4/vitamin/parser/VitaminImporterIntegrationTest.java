@@ -3,6 +3,8 @@ package dk.nsi.sdm4.vitamin.parser;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
 import dk.nsi.sdm4.testutils.TestDbConfiguration;
 import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
+import dk.nsi.sdm4.vitamin.recordspecs.VitaminGrunddataRecordSpecsTest;
+import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Instant;
@@ -128,9 +130,10 @@ public class VitaminImporterIntegrationTest
 	private void importFile(String filePath) throws Exception {
 		URL resource = getClass().getClassLoader().getResource(filePath);
 		File datasetDir = temporaryFolder.newFolder();
-		FileUtils.copyURLToFile(resource, new File(datasetDir, lastPathSegment(filePath)));
+		File fileToImport = new File(datasetDir, lastPathSegment(filePath));
+		FileUtils.copyURLToFile(resource, fileToImport);
 
-		parser.process(datasetDir);
+		parser.processSingleFile(fileToImport, VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 	}
 
 	private String lastPathSegment(String filePath) {
