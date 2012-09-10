@@ -1,17 +1,12 @@
 package dk.nsi.sdm4.vitamin.parser;
 
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
+import dk.nsi.sdm4.core.persistence.recordpersister.RecordSpecification;
 import dk.nsi.sdm4.testutils.TestDbConfiguration;
 import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
-import dk.nsi.sdm4.vitamin.exception.InvalidVitaminDatasetException;
-import dk.nsi.sdm4.vitamin.recordspecs.VitaminGrunddataRecordSpecsTest;
 import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
-import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -20,11 +15,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.sql.Timestamp;
-import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,14 +37,14 @@ public class VitaminParserSinglefilesIntegrationTest
 
 	@Test
 	public void persistsAllLines() throws Exception {
-	    importFile("data/vitaminer/nat01.txt");
+	    importFile("data/vitaminer/nat01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 
 		assertEquals(86, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 	}
 
 	@Test
 	public void persistsNameWithNonAsciiCharacters() throws Exception {
-		importFile("data/vitaminer/nat01.txt");
+		importFile("data/vitaminer/nat01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 
 		assertEquals("Drogen`s Stærk Baldrian citrm.", jdbcTemplate.queryForObject("SELECT Navn FROM VitaminGrunddata where DrugID=52610061197", String.class));
 		assertEquals("Ægte Venustorn", jdbcTemplate.queryForObject("SELECT Navn FROM VitaminGrunddata where DrugID=52610011893", String.class));
@@ -62,27 +53,34 @@ public class VitaminParserSinglefilesIntegrationTest
 
 	@Test
 	public void persistsKarantaeneData() throws Exception {
-		importFile("data/vitaminer/nat01.txt");
+		importFile("data/vitaminer/nat01.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 
 		assertEquals("20061009", jdbcTemplate.queryForObject("SELECT KarantaeneDato FROM VitaminGrunddata where DrugID=52610057196", String.class));
 	}
 
 	@Test
+	public void persistsFirmadata() throws Exception {
+		importFile("data/vitaminer/rad09.txt", VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+
+		assertEquals("Odense Universitets Hospital", jdbcTemplate.queryForObject("SELECT LangtFirmaMaerke FROM VitaminFirmadata where FirmaID=257447", String.class));
+	}
+
+	@Test
 	public void makesNoExtraRowsWhenImportingSameDataTwice() throws Exception {
-		importFile("data/historik/nat01-1.txt");
+		importFile("data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 
-		importFile("data/historik/nat01-1.txt");
+		importFile("data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 	}
 
 	@Test
 	public void closesExistingRowAndmakesNewRowWhenImportingSameDrugWithChangedData() throws Exception {
-		importFile("data/historik/nat01-1.txt");
+		importFile("data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 		long oldestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata");
 
-		importFile("data/historik/nat01-2.txt");
+		importFile("data/historik/nat01-2.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 		long newestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL");
 
@@ -93,10 +91,10 @@ public class VitaminParserSinglefilesIntegrationTest
 
 	@Test
 	public void closesExistingRowWhenDrugDisappearsFromDataFile() throws Exception {
-		importFile("data/sletning/nat01-1.txt");
+		importFile("data/sletning/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata WHERE ValidTo IS NULL")); // both drugs should be valid
 
-		importFile("data/sletning/nat01-slettet.txt"); // i denne fil findes Drug med DrugID 28116104107 ikke længere
+		importFile("data/sletning/nat01-slettet.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC); // i denne fil findes Drug med DrugID 28116104107 ikke længere
 		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata")); // no rows should be deleted
 
 		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where DrugID = ?", Timestamp.class, "28116104107"));
@@ -107,7 +105,7 @@ public class VitaminParserSinglefilesIntegrationTest
 		return new Timestamp(persisterTimeWithMillisTruncated.getMillis());
 	}
 
-	private void importFile(String filePath) throws Exception {
-		parser.processSingleFile(new ClassPathResource(filePath).getFile(), VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+	private void importFile(String filePath, RecordSpecification spec) throws Exception {
+		parser.processSingleFile(new ClassPathResource(filePath).getFile(), spec);
 	}
 }

@@ -31,10 +31,10 @@ public class VitaminRecordSpecs {
 		    field("karantaeneDato", 8));
     
     public static final RecordSpecification FIRMADATA_RECORD_SPEC = RecordSpecification.createSpecification("VitaminFirmadata", "firmaID", 
-            field("firmaID", 0),
-            field("kortFirmaMaerke", 0),
-            field("langtFirmaMaerke", 0),
-            field("parallelimportKode", 0));
+            field("firmaID", 6).numerical(),
+            field("langtFirmaMaerke", 32),
+		    field("kortFirmaMaerke", 20),
+		    field("parallelimportKode", 2));
     
     public static final RecordSpecification UDGAAEDENAVNE_RECORD_SPEC = RecordSpecification.createSpecification("VitaminUdgaaedeNavne", "drugID", 
             field("drugID", 0),
