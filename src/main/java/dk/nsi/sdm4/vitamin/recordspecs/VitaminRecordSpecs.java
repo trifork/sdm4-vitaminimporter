@@ -37,9 +37,9 @@ public class VitaminRecordSpecs {
 		    field("parallelimportKode", 2));
     
     public static final RecordSpecification UDGAAEDENAVNE_RECORD_SPEC = RecordSpecification.createSpecification("VitaminUdgaaedeNavne", "drugID", 
-            field("drugID", 0),
-            field("aendringsDato", 0),
-            field("tidligereNavn", 0));
+            field("drugID", 11).numerical(),
+            field("aendringsDato", 8),
+            field("tidligereNavn", 50));
     
     public static final RecordSpecification INDHOLDSSTOFFER_RECORD_SPEC = RecordSpecification.createSpecification("VitaminIndholdsstoffer", "drugID", 
             field("drugID", 0),

@@ -66,6 +66,14 @@ public class VitaminParserSinglefilesIntegrationTest
 	}
 
 	@Test
+	public void persistsUdgaaedeNavne() throws Exception {
+		importFile("data/vitaminer/nat10.txt", VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+
+		assertEquals("OBBEKJÆRS ORIGINALE PEBERMYNTE GRÆSKARKERNE", jdbcTemplate.queryForObject("SELECT TidligereNavn FROM VitaminUdgaaedeNavne where DrugID=52610024893 and AendringsDato='19961212'", String.class));
+	}
+
+
+	@Test
 	public void makesNoExtraRowsWhenImportingSameDataTwice() throws Exception {
 		importFile("data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));

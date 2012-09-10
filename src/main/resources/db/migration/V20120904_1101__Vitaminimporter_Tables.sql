@@ -49,7 +49,7 @@ CREATE TABLE VitaminUdgaaedeNavne (
     VitaminUdgaedeNavnePID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     DrugID BIGINT(12),
-    AendringsDato DATE,
+    AendringsDato VARCHAR(8),
     TidligereNavn VARCHAR(50),
 
     ModifiedDate DATETIME NOT NULL,
