@@ -6,6 +6,6 @@ import org.junit.Test;
 public class VitaminimporterIsUpIT {
 	@Test
 	public void statusPageReturns200OK() throws Exception {
-		new StatuspageChecker().assertThatStatuspageReturns200OK("vitaminimporter");
+		new StatuspageChecker("vitaminimporter").assertThatStatuspageReturns200OK();
 	}
 }
