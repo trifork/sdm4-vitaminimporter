@@ -91,4 +91,50 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+
+
+
+
+                <executions>
+                    <execution>
+                        <id>clear-db</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>vagrant</executable>
+                            <arguments>
+                                <argument>ssh</argument>
+                                <argument>-c</argument>
+                                <argument>mysql -uroot -ppapkasse -e "use sdm_warehouse; truncate vitaminimporterImportStatus; truncate VitaminGrunddata; truncate VitaminFirmadata; truncate VitaminUdgaaedeNavne; truncate VitaminIndholdsstoffer"</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>deploy-data</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>vagrant</executable>
+                            <arguments>
+                                <argument>ssh</argument>
+                                <argument>-c</argument>
+                                <argument>sudo -u jboss cp -R /vagrant/sdm4-${project.artifactId}/target/test-classes/data/vitaminer/ /pack/jboss/domain/data/sdm4/vitaminimporter/</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
