@@ -65,7 +65,6 @@ public class VitaminParser implements Parser {
 
 		try {
 			for (File file : datadir.listFiles()) {
-
 				RecordSpecification spec = specsForFiles.get(file.getName());
 				if (spec != null) {
 					processSingleFile(file, spec);
@@ -109,6 +108,9 @@ public class VitaminParser implements Parser {
 	}
 
 	void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
+		if (log.isDebugEnabled()) {
+			log.debug("Processing file " + file + " with spec " + spec.getClass().getSimpleName());
+		}
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser importer of file", file.getName());
 
 		try {
@@ -131,20 +133,43 @@ public class VitaminParser implements Parser {
 
 		File grunddataFile = file;
 		List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
+
+		if (log.isDebugEnabled()) {
+			log.debug("Read " + lines.size() + " lines from file " + file.getAbsolutePath());
+		}
+
 		for (String line : lines) {
+			if (log.isDebugEnabled()) {
+				log.debug("Processing line " + line);
+			}
+
 			Record record = grunddataParser.parseLine(line);
+
+			if (log.isDebugEnabled()) {
+				log.debug("Parsed line to record " + record);
+			}
+
 			drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
 			Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
 			if (existingRecord != null) {
 				if (existingRecord.equals(record)) {
+					if (log.isDebugEnabled()) {
+						log.debug("Ignoring record " + record + " for spec " + spec.getTable() + " as we have identical record in db");
+					}
 					// no need to do anything
 				} else {
+					if (log.isDebugEnabled()) {
+						log.debug("Setting validTo on database record " + existingRecord + " for spec " + spec.getTable() + " before insertion of new record " + record);
+					}
 					jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
 							persister.getTransactionTime().toDateTime().toDate(),
 							existingRecord.get(spec.getKeyColumn()));
 					persister.persist(record, spec);
 				}
 			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("Persisting new record " + record + " for spec " + spec.getTable());
+				}
 				persister.persist(record, spec);
 			}
 		}
