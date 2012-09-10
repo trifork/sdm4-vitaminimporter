@@ -72,6 +72,12 @@ public class VitaminParserSinglefilesIntegrationTest
 		assertEquals("OBBEKJÆRS ORIGINALE PEBERMYNTE GRÆSKARKERNE", jdbcTemplate.queryForObject("SELECT TidligereNavn FROM VitaminUdgaaedeNavne where DrugID=52610024893 and AendringsDato='19961212'", String.class));
 	}
 
+	@Test
+	public void persistsIndholdsstoffer() throws Exception {
+		importFile("data/vitaminer/nat30.txt", VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
+
+		assertEquals("savpalmefrugt (serenoa repens)", jdbcTemplate.queryForObject("SELECT Substansgruppe FROM VitaminIndholdsstoffer where DrugID=28116170104", String.class));
+	}
 
 	@Test
 	public void makesNoExtraRowsWhenImportingSameDataTwice() throws Exception {

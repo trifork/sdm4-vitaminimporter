@@ -42,9 +42,10 @@ public class VitaminRecordSpecs {
             field("tidligereNavn", 50));
     
     public static final RecordSpecification INDHOLDSSTOFFER_RECORD_SPEC = RecordSpecification.createSpecification("VitaminIndholdsstoffer", "drugID", 
-            field("drugID", 0),
-            field("stofKlasse", 0),
-            field("substansgruppe", 0),
-            field("substans", 0));
+            field("drugID", 11).numerical(),
+		    field("tom", 6).ignored(),
+		    field("stofklasse", 100),
+            field("substansgruppe", 100),
+            field("substans", 150));
 
 }
