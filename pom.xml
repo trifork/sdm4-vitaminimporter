@@ -9,13 +9,14 @@
 
 	<artifactId>vitaminimporter</artifactId>
 	<packaging>war</packaging>
-	<version>4.0-SNAPSHOT</version>
+	<version>4.0</version>
 
     <scm>
         <url>scm:git:git@github.com:trifork/sdm4-vitaminimporter</url>
         <connection>scm:git:git@github.com:trifork/sdm4-vitaminimporter.git</connection>
         <developerConnection>scm:git:git@github.com:trifork/sdm4-vitaminimporter.git</developerConnection>
-    </scm>
+      <tag>vitaminimporter-4.0</tag>
+  </scm>
     <issueManagement>
         <system>JIRA</system>
         <url>https://jira.trifork.com/</url>
