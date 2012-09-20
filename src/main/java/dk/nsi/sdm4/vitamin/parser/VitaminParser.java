@@ -114,16 +114,16 @@ public class VitaminParser implements Parser {
 					log.log(levelForUnexpectedFile(file), "Ignoring file " + file.getAbsolutePath());
 				}
 			}
-
-
-			slaLogItem.setCallResultOk();
-			slaLogItem.store();
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
 
 			throw new ParserException(e);
 		}
+
+
+		slaLogItem.setCallResultOk();
+		slaLogItem.store();
 	}
 
 	// kun ikke-private for at tillade test, kaldes ikke udefra
@@ -161,7 +161,7 @@ public class VitaminParser implements Parser {
 	}
 
 	// kun ikke-private for at tillade test, kaldes ikke udefra
-	void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
+	void processSingleFile(File file, RecordSpecification spec) {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing file " + file + " with spec " + spec.getClass().getSimpleName());
 		}
@@ -170,22 +170,22 @@ public class VitaminParser implements Parser {
 		try {
 			Set<Long> drugidsFromFile = parseAndPersistFile(file, spec);
 			invalidateRecordsRemovedFromFile(drugidsFromFile, spec);
-
-			slaLogItem.setCallResultOk();
-			slaLogItem.store();
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
 
 			throw new ParserException(e);
 		}
+
+		slaLogItem.setCallResultOk();
+		slaLogItem.store();
 	}
 
-	private Set<Long> parseAndPersistFile(File file, RecordSpecification spec) throws IOException, SQLException {
+	private Set<Long> parseAndPersistFile(File file, RecordSpecification spec) {
 		SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
 		Set<Long> drugidsFromFile = new HashSet<Long>();
 
-		List<String> lines = FileUtils.readLines(file, FILE_ENCODING);// files are very small, it's okay to hold them in memory
+		List<String> lines = readFile(file);// files are very small, it's okay to hold them in memory
 		if (log.isDebugEnabled()) log.debug("Read " + lines.size() + " lines from file " + file.getAbsolutePath());
 
 		for (String line : lines) {
@@ -200,8 +200,16 @@ public class VitaminParser implements Parser {
 		return drugidsFromFile;
 	}
 
-	private void persistRecordIfNeeeded(RecordSpecification spec, Record record) throws SQLException {
-		Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
+	private List<String> readFile(File file) {
+		try {
+			return FileUtils.readLines(file, FILE_ENCODING);
+		} catch (IOException e) {
+			throw new ParserException("Unable to read file " + file.getAbsolutePath(), e);
+		}
+	}
+
+	private void persistRecordIfNeeeded(RecordSpecification spec, Record record) {
+		Record existingRecord = findRecordWithSameKey(record, spec);
 		if (existingRecord != null) {
 			if (existingRecord.equals(record)) {
 				// no need to do anything
@@ -211,11 +219,27 @@ public class VitaminParser implements Parser {
 				jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
 						persister.getTransactionTime().toDateTime().toDate(),
 						existingRecord.get(spec.getKeyColumn()));
-				persister.persist(record, spec);
+				persist(record, spec);
 			}
 		} else {
 			if (log.isDebugEnabled()) log.debug("Persisting new record " + record + " for spec " + spec.getTable());
+			persist(record, spec);
+		}
+	}
+
+	private Record findRecordWithSameKey(Record record, RecordSpecification spec) {
+		try {
+			return fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
+		} catch (SQLException e) {
+			throw new ParserException("While trying to find record with same key as " + record + " and spec " + spec, e);
+		}
+	}
+
+	private void persist(Record record, RecordSpecification spec) {
+		try {
 			persister.persist(record, spec);
+		} catch (SQLException e) {
+			throw new ParserException("Unable to persist record " + record + " with spec " + spec, e);
 		}
 	}
 
