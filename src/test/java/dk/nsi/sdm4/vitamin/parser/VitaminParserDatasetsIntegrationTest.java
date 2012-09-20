@@ -96,6 +96,4 @@ public class VitaminParserDatasetsIntegrationTest
 		parser.process(dataDirWithExtraFile);
 		assertEquals(3, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM " + VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC.getTable()));
 	}
-
-
 }

@@ -13,6 +13,7 @@ import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -72,12 +73,10 @@ public class VitaminParser implements Parser {
 					processSingleFile(file, spec);
 				} else {
 					// hvis vi ikke har nogen spec, skal filen ikke processeres.
-					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en forventet situation
-					if (log.isDebugEnabled()) {
-						log.debug("Ignoring file " + file.getAbsolutePath());
-					}
+					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en forventet situation og skal debug-logges
+					// Andre filer tyder på at noget er galt og skal warn-logges
+					log.log(levelForUnexpectedFile(file), "Ignoring file " + file.getAbsolutePath());
 				}
-
 			}
 
 
@@ -89,6 +88,16 @@ public class VitaminParser implements Parser {
 
 			throw new ParserException(e);
 		}
+	}
+
+	protected Level levelForUnexpectedFile(File file) {
+		Level logLevel;
+		if (file.getName().matches("slet\\d*.txt")) {
+			logLevel = Level.DEBUG;
+		} else {
+			logLevel = Level.WARN;
+		}
+		return logLevel;
 	}
 
 	/**
