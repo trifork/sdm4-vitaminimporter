@@ -102,7 +102,8 @@ public class VitaminParser implements Parser {
 		}
 	}
 
-	protected Level levelForUnexpectedFile(File file) {
+	// kun ikke-private for at tillade test, kaldes ikke udefra
+	Level levelForUnexpectedFile(File file) {
 		Level logLevel;
 		if (file.getName().matches("slet\\d*.txt")) {
 			logLevel = Level.DEBUG;
@@ -135,6 +136,7 @@ public class VitaminParser implements Parser {
 		}
 	}
 
+	// kun ikke-private for at tillade test, kaldes ikke udefra
 	void processSingleFile(File file, RecordSpecification spec) throws IOException, SQLException {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing file " + file + " with spec " + spec.getClass().getSimpleName());
