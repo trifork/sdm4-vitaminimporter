@@ -58,6 +58,7 @@ public class VitaminParser implements Parser {
 
 	private static final String FILE_ENCODING = "CP865";
 
+	@Override
 	public void process(File datadir) throws ParserException {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
 
