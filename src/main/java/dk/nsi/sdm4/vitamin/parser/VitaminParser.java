@@ -166,12 +166,12 @@ public class VitaminParser implements Parser {
 	}
 
 	private void invalidateRecordsRemovedFromFile(Set<Long> idsFromFile, RecordSpecification spec) {
-		Set<Long> idsFromDb = new HashSet<Long>(jdbcTemplate.queryForList("SELECT " + spec.getKeyColumn() + " from " + spec.getTable() + " WHERE ValidTo IS NULL", Long.class));
-		idsFromDb.removeAll(idsFromFile);
+		// we'll compute the list of ids of record to be invalidated by fetching all the ids from the database, then weeding out all the ids that exist in the input file - these shouldn't be removed
+		Set<Long> idsToBeInvalidated = new HashSet<Long>(jdbcTemplate.queryForList("SELECT " + spec.getKeyColumn() + " from " + spec.getTable() + " WHERE ValidTo IS NULL", Long.class));
+		idsToBeInvalidated.removeAll(idsFromFile);
 
-		Set<Long> idsToBeRemoved = idsFromDb;
-		if (!idsToBeRemoved.isEmpty()) {
-			jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ? WHERE " + spec.getKeyColumn() + " IN (" + StringUtils.join(idsToBeRemoved, ',')  + ") AND ValidTo IS NULL", persister.getTransactionTime().toDateTime().toDate());
+		if (!idsToBeInvalidated.isEmpty()) {
+			jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ? WHERE " + spec.getKeyColumn() + " IN (" + StringUtils.join(idsToBeInvalidated, ',')  + ") AND ValidTo IS NULL", persister.getTransactionTime().toDateTime().toDate());
 		}
 	}
 
