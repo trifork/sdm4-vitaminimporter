@@ -17,12 +17,18 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
+/**
+ * Hoved-klasse i vitaminimporter-modulet. Ansvarlig for at koordinere importen af et datasæt af filer.
+ * Antager at process-modetoden kaldes af ParserExecutor med et validt dataset
+*/
 public class VitaminParser implements Parser {
 	private static final Logger log = Logger.getLogger(VitaminParser.class);
 
@@ -59,7 +65,13 @@ public class VitaminParser implements Parser {
 
 	private static final String FILE_ENCODING = "CP865";
 
+	/**
+	 * Ansvarlig for at håndtere import af et vitamin-datasæt.
+	 * Antager, at den bliver kaldt i en kontekst hvor der allere er etableret en transaktion.
+	 * @see dk.nsi.sdm4.core.parser.Parser#getHome()
+	 */
 	@Override
+	@Transactional(propagation = Propagation.MANDATORY)
 	public void process(File datadir) throws ParserException {
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
 
