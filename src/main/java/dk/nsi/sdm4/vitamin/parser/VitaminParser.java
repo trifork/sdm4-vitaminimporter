@@ -131,49 +131,38 @@ public class VitaminParser implements Parser {
 		SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
 		Set<Long> drugidsFromFile = new HashSet<Long>();
 
-		File grunddataFile = file;
-		List<String> lines = FileUtils.readLines(grunddataFile, FILE_ENCODING);// files are very small, it's okay to hold them in memory
-
-		if (log.isDebugEnabled()) {
-			log.debug("Read " + lines.size() + " lines from file " + file.getAbsolutePath());
-		}
+		List<String> lines = FileUtils.readLines(file, FILE_ENCODING);// files are very small, it's okay to hold them in memory
+		if (log.isDebugEnabled()) log.debug("Read " + lines.size() + " lines from file " + file.getAbsolutePath());
 
 		for (String line : lines) {
-			if (log.isDebugEnabled()) {
-				log.debug("Processing line " + line);
-			}
-
+			if (log.isDebugEnabled()) log.debug("Processing line " + line);
 			Record record = grunddataParser.parseLine(line);
-
-			if (log.isDebugEnabled()) {
-				log.debug("Parsed line to record " + record);
-			}
+			if (log.isDebugEnabled()) log.debug("Parsed line to record " + record);
 
 			drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
-			Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
-			if (existingRecord != null) {
-				if (existingRecord.equals(record)) {
-					if (log.isDebugEnabled()) {
-						log.debug("Ignoring record " + record + " for spec " + spec.getTable() + " as we have identical record in db");
-					}
-					// no need to do anything
-				} else {
-					if (log.isDebugEnabled()) {
-						log.debug("Setting validTo on database record " + existingRecord + " for spec " + spec.getTable() + " before insertion of new record " + record);
-					}
-					jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
-							persister.getTransactionTime().toDateTime().toDate(),
-							existingRecord.get(spec.getKeyColumn()));
-					persister.persist(record, spec);
-				}
+			persistRecordIfNeeeded(spec, record);
+		}
+
+		return drugidsFromFile;
+	}
+
+	private void persistRecordIfNeeeded(RecordSpecification spec, Record record) throws SQLException {
+		Record existingRecord = fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
+		if (existingRecord != null) {
+			if (existingRecord.equals(record)) {
+				// no need to do anything
+				if (log.isDebugEnabled()) log.debug("Ignoring record " + record + " for spec " + spec.getTable() + " as we have identical record in db");
 			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("Persisting new record " + record + " for spec " + spec.getTable());
-				}
+				if (log.isDebugEnabled()) log.debug("Setting validTo on database record " + existingRecord + " for spec " + spec.getTable() + " before insertion of new record " + record);
+				jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
+						persister.getTransactionTime().toDateTime().toDate(),
+						existingRecord.get(spec.getKeyColumn()));
 				persister.persist(record, spec);
 			}
+		} else {
+			if (log.isDebugEnabled()) log.debug("Persisting new record " + record + " for spec " + spec.getTable());
+			persister.persist(record, spec);
 		}
-		return drugidsFromFile;
 	}
 
 	private void invalidateRecordsRemovedFromFile(Set<Long> idsFromFile, RecordSpecification spec) {
