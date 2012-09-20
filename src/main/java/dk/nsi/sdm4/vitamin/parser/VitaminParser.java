@@ -65,6 +65,7 @@ public class VitaminParser implements Parser {
 		validateDataset(datadir);
 
 		try {
+			assert datadir.listFiles() != null;
 			for (File file : datadir.listFiles()) {
 				RecordSpecification spec = specsForFiles.get(file.getName());
 				if (spec != null) {
@@ -91,10 +92,15 @@ public class VitaminParser implements Parser {
 	}
 
 	/**
-	 * @throws InvalidVitaminDatasetException if a required file is missing
+	 * @throws InvalidVitaminDatasetException if a required file is missing or datadir is not a readable directory
 	 */
 	private void validateDataset(File datadir) {
+		checkThat((datadir != null), "datadir is null");
+		checkThat(datadir.isDirectory(), "datadir " + datadir.getAbsolutePath() + " is not a directory");
+		checkThat(datadir.canRead(), "datadir " + datadir.getAbsolutePath() + " is not readable");
+
 		Set<String> requiredFileNames = new HashSet<String>(specsForFiles.keySet());
+
 		File[] actualFiles = datadir.listFiles();
 		Set<String> actualFilenames = new HashSet<String>();
 		for (File actualFile : actualFiles) {
@@ -179,5 +185,11 @@ public class VitaminParser implements Parser {
 	@Override
 	public String getHome() {
 		return "vitaminimporter";
+	}
+
+	private void checkThat(boolean expression, String errorMessage) {
+		if (!expression) {
+			throw new InvalidVitaminDatasetException(errorMessage);
+		}
 	}
 }
