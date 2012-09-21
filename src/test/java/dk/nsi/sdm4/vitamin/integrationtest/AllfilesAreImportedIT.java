@@ -47,6 +47,9 @@ import javax.sql.DataSource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * Udfører en import på integrationstest vagrant-vm'en og tjekker derefter databasen
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = {AllfilesAreImportedIT.TestConfiguration.class})

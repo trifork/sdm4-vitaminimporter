@@ -33,6 +33,9 @@ import dk.nsi.sdm4.core.config.StamdataConfiguration;
 import dk.sdsd.nsp.slalog.api.SLALogConfig;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 
+/**
+ * Spring-konfiguration der forventes at ændre sig mellem miljøer (fx test/produktion)
+ */
 @Configuration
 @EnableScheduling
 @EnableTransactionManagement

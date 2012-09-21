@@ -31,6 +31,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Unittest der kontrollerer parsning af eksempel datalinjer for Indholdsstoffer
+ */
 public class VitaminIndholdsstofferRecordSpecsTest {
 	private Record record;
 

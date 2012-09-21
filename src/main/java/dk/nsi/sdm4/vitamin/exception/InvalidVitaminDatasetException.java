@@ -26,6 +26,10 @@ package dk.nsi.sdm4.vitamin.exception;
 
 import dk.nsi.sdm4.core.parser.ParserException;
 
+/**
+ * Indikerer at der er noget galt med det dataset, VitaminImporter er blevet bedt om at behandle.
+ * Det kan ikke betale sig at prøve igen med samme dataset.
+ */
 public class InvalidVitaminDatasetException extends ParserException {
 	public InvalidVitaminDatasetException(String message) {
 		super(message);

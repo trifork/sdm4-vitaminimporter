@@ -27,6 +27,9 @@ package dk.nsi.sdm4.vitamin.integrationtest;
 import dk.nsi.sdm4.testutils.StatuspageChecker;
 import org.junit.Test;
 
+/**
+ * Kontroller at applikationen kan starte på integrationstest vagrant-vm'en
+ */
 public class VitaminimporterIsUpIT {
 	@Test
 	public void statusPageReturns200OK() throws Exception {

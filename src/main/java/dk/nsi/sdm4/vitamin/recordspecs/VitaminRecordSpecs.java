@@ -28,6 +28,9 @@ import dk.nsi.sdm4.core.persistence.recordpersister.RecordSpecification;
 
 import static dk.nsi.sdm4.core.persistence.recordpersister.FieldSpecification.field;
 
+/**
+ * Specifikation af feltlænger og -navne for de fire typer data i vitamin-filerne.
+ */
 public class VitaminRecordSpecs {
     public static final RecordSpecification GRUNDDATA_RECORD_SPEC = RecordSpecification.createSpecification("VitaminGrunddata", "drugID", 
             field("drugID", 11).numerical(),

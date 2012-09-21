@@ -32,6 +32,9 @@ import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Unit tests af VitaminParser
+ */
 public class VitaminParserTest {
 	private VitaminParser parser;
 

@@ -30,6 +30,9 @@ import dk.nsi.sdm4.vitamin.parser.VitaminParser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Spring-konfiguration der ikke forventes at ændre sig mellem miljøer (fx test/produktion)
+ */
 @Configuration
 public class VitaminimporterApplicationConfig {
 	@Bean

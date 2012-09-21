@@ -44,6 +44,10 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test af opførsel vedr validering af dataset og import af et fuldt dataset.
+ * Er en integrationstest, dvs. importeren gemmer i databasen
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = {VitaminimporterApplicationConfig.class, TestDbConfiguration.class})

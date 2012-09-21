@@ -45,6 +45,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Test af opførsel vedr validering af enkeltfiler.
+ * Er en integrationstest, dvs. importeren gemmer i databasen
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = {VitaminimporterApplicationConfig.class, TestDbConfiguration.class})
