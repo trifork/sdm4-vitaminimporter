@@ -31,7 +31,10 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class VitaminUdgaaedeRecordSpecsTest {
+/**
+ * Unittest der kontrollerer parsning af eksempel datalinjer for Udgaaedenavne
+ */
+public class VitaminUdgaaedenavneRecordSpecsTest {
 	private SingleLineRecordParser grunddataParser;
 	private Record record;
 
