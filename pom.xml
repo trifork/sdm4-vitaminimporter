@@ -99,10 +99,6 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
-
-
-
-
                 <executions>
                     <execution>
                         <id>clear-db</id>
