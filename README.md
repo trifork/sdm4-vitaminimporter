@@ -3,7 +3,7 @@
 ## Igang
 vitaminimporteren er af typen der bruger en RecordPersister
 Læs stamdata dokumentation der ligger i SDM-Core projektet inden dette projekt bygges.
-Se https://github.com/trifork/sdm4-core/tree/sdm-core-4.1/doc
+Se https://github.com/trifork/sdm4-core/tree/sdm-core-4.2/doc
 
 For at køre integrationstests, kræves en opsætning som beskrevet i guide til udviklere
 
