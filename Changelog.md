@@ -1,3 +1,6 @@
+## vitaminimporter 4.4
+*  NSPSUPPORT-103: Databaseskema kan nu køres på eksisterende sdm3-skema uden runtime-fejl
+
 ## vitaminimporter 4.3
 *  Ret pakket version af nsp-util til 1.0.9, vitaminimporter 4.2 havde ved en fejl 1.0.8 med
 
