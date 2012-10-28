@@ -1,4 +1,4 @@
-CREATE TABLE VitaminGrunddata (
+ CREATE TABLE IF NOT EXISTS VitaminGrunddata (
     VitaminGrunddataPID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     DrugID BIGINT(12),
@@ -30,7 +30,7 @@ CREATE TABLE VitaminGrunddata (
     INDEX (DrugId, ValidTo, ValidFrom)
 ) ENGINE=InnoDB COLLATE=utf8_bin;
 
-CREATE TABLE VitaminFirmadata (
+ CREATE TABLE IF NOT EXISTS VitaminFirmadata (
     VitaminFirmadataPID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     FirmaID BIGINT(6),
@@ -45,7 +45,7 @@ CREATE TABLE VitaminFirmadata (
     INDEX (FirmaId, ValidTo, ValidFrom)
 ) ENGINE=InnoDB COLLATE=utf8_bin;
 
-CREATE TABLE VitaminUdgaaedeNavne (
+ CREATE TABLE IF NOT EXISTS VitaminUdgaaedeNavne (
     VitaminUdgaedeNavnePID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     DrugID BIGINT(12),
@@ -59,7 +59,7 @@ CREATE TABLE VitaminUdgaaedeNavne (
     INDEX (DrugId, ValidTo, ValidFrom)
 ) ENGINE=InnoDB COLLATE=utf8_bin;
 
-CREATE TABLE VitaminIndholdsstoffer (
+ CREATE TABLE IF NOT EXISTS VitaminIndholdsstoffer (
     VitaminIndholdsstofferPID BIGINT(15) AUTO_INCREMENT NOT NULL PRIMARY KEY,
 
     DrugID BIGINT(12),
