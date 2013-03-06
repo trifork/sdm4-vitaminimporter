@@ -35,46 +35,46 @@ import static dk.nsi.sdm4.core.persistence.recordpersister.FieldSpecification.fi
  */
 public class VitaminRecordSpecs {
     public static final RecordSpecification GRUNDDATA_RECORD_SPEC = RecordSpecification.createSpecification("VitaminGrunddata", "drugID", 
-            field("drugID", 11).numerical(),
-            field("varetype", 2),
-            field("varedeltype", 2),
-            field("alfabetSekvensplads", 9),
-            field("specNummer", 5),
-		    field("navn", 30),
-            field("formTekst", 20),
-		    field("formKode", 7),
-		    field("kodeYderligereFormOplysninger", 7),
-            field("styrkeTekst", 20),
-            field("styrkeNumerisk", 10).decimal10_3(),
-            field("styrkeEnhed", 3),
-            field("mtIndehaverKode", 6).numerical(),
-            field("repraesentantDistributoerKode", 6).numerical(),
-            field("atcKode", 8),
-            field("administrationsvejKode", 8),
-            field("trafikadvarsel", 1),
-            field("substitution", 1),
-		    field("blank", 3).ignored(),
-            field("substitutionsgruppe", 4),
-            field("dosisdispensering", 1),
-		    field("blank", 8).ignored(),
-		    field("karantaeneDato", 8));
+            field("drugID", 11, false).numerical(),
+            field("varetype", 2, false),
+            field("varedeltype", 2, false),
+            field("alfabetSekvensplads", 9, false),
+            field("specNummer", 5, false),
+		    field("navn", 30, false),
+            field("formTekst", 20, false),
+		    field("formKode", 7, false),
+		    field("kodeYderligereFormOplysninger", 7, false),
+            field("styrkeTekst", 20, false),
+            field("styrkeNumerisk", 10, false).decimal10_3(),
+            field("styrkeEnhed", 3, false),
+            field("mtIndehaverKode", 6, false).numerical(),
+            field("repraesentantDistributoerKode", 6, false).numerical(),
+            field("atcKode", 8, false),
+            field("administrationsvejKode", 8, false),
+            field("trafikadvarsel", 1, false),
+            field("substitution", 1, false),
+		    field("blank", 3, false).ignored(),
+            field("substitutionsgruppe", 4, false),
+            field("dosisdispensering", 1, false),
+		    field("blank", 8, false).ignored(),
+		    field("karantaeneDato", 8, false));
     
     public static final RecordSpecification FIRMADATA_RECORD_SPEC = RecordSpecification.createSpecification("VitaminFirmadata", "firmaID", 
-            field("firmaID", 6).numerical(),
-            field("langtFirmaMaerke", 32),
-		    field("kortFirmaMaerke", 20),
-		    field("parallelimportKode", 2));
+            field("firmaID", 6, false).numerical(),
+            field("langtFirmaMaerke", 32, false),
+		    field("kortFirmaMaerke", 20, false),
+		    field("parallelimportKode", 2, false));
     
     public static final RecordSpecification UDGAAEDENAVNE_RECORD_SPEC = RecordSpecification.createSpecification("VitaminUdgaaedeNavne", "drugID", 
-            field("drugID", 11).numerical(),
-            field("aendringsDato", 8),
-            field("tidligereNavn", 50));
+            field("drugID", 11, false).numerical(),
+            field("aendringsDato", 8, false),
+            field("tidligereNavn", 50, false));
     
     public static final RecordSpecification INDHOLDSSTOFFER_RECORD_SPEC = RecordSpecification.createSpecification("VitaminIndholdsstoffer", "drugID", 
-            field("drugID", 11).numerical(),
-		    field("tom", 6).ignored(),
-		    field("stofklasse", 100),
-            field("substansgruppe", 100),
-            field("substans", 150));
+            field("drugID", 11, false).numerical(),
+		    field("tom", 6, false).ignored(),
+		    field("stofklasse", 100, false),
+            field("substansgruppe", 100, false),
+            field("substans", 150, false));
 
 }
