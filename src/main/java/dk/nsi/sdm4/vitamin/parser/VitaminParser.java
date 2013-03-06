@@ -218,8 +218,9 @@ public class VitaminParser implements Parser {
 				if (log.isDebugEnabled()) log.debug("Ignoring record " + record + " for spec " + spec.getTable() + " as we have identical record in db");
 			} else {
 				if (log.isDebugEnabled()) log.debug("Setting validTo on database record " + existingRecord + " for spec " + spec.getTable() + " before insertion of new record " + record);
-				jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
-						persister.getTransactionTime().toDateTime().toDate(),
+                Date transactionTime = persister.getTransactionTime().toDateTime().toDate();
+                jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ?, ModifiedDate=? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
+                        transactionTime, transactionTime,
 						existingRecord.get(spec.getKeyColumn()));
 				persist(record, spec);
 			}
@@ -251,7 +252,10 @@ public class VitaminParser implements Parser {
 		idsToBeInvalidated.removeAll(idsFromFile);
 
 		if (!idsToBeInvalidated.isEmpty()) {
-			jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ? WHERE " + spec.getKeyColumn() + " IN (" + StringUtils.join(idsToBeInvalidated, ',')  + ") AND ValidTo IS NULL", persister.getTransactionTime().toDateTime().toDate());
+            Date transaction = persister.getTransactionTime().toDateTime().toDate();
+            jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ?, ModifiedDate = ? WHERE " + spec.getKeyColumn() +
+                    " IN (" + StringUtils.join(idsToBeInvalidated, ',')  + ") AND ValidTo IS NULL",
+                    transaction, transaction);
 		}
 	}
 
