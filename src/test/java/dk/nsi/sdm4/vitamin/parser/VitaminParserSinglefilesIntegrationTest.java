@@ -122,15 +122,15 @@ public class VitaminParserSinglefilesIntegrationTest
 	public void closesExistingRowAndmakesNewRowWhenImportingSameDrugWithChangedData() throws Exception {
 		importFile("data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-		long oldestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata");
+		long oldestPid = jdbcTemplate.queryForLong("SELECT PID FROM VitaminGrunddata");
 
 		importFile("data/historik/nat01-2.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
 		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-		long newestPid = jdbcTemplate.queryForLong("SELECT VitaminGrunddataPID FROM VitaminGrunddata WHERE ValidTo IS NULL");
+		long newestPid = jdbcTemplate.queryForLong("SELECT PID FROM VitaminGrunddata WHERE ValidTo IS NULL");
 
-		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, oldestPid));
-		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where VitaminGrunddataPID = ?", Timestamp.class, newestPid));
-		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where VitaminGrunddataPID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
+		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where PID = ?", Timestamp.class, oldestPid));
+		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where PID = ?", Timestamp.class, newestPid));
+		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where PID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
 	}
 
 	@Test
