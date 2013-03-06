@@ -100,7 +100,7 @@ public class AllfilesAreImportedIT {
 
 	private void assertDbContainsExpectedRows() {
 		assertEquals("VitaminGrunddata", 194, jdbcTemplate.queryForInt("SELECT COUNT(*) from VitaminGrunddata"));
-		assertEquals("VitaminFirmadata", 79, jdbcTemplate.queryForInt("SELECT COUNT(*) from VitaminFirmadata"));
+		assertEquals("VitaminFirmadata", 71, jdbcTemplate.queryForInt("SELECT COUNT(*) from VitaminFirmadata"));
 		assertEquals("VitaminUdgaaedeNavne", 141, jdbcTemplate.queryForInt("SELECT COUNT(*) from VitaminUdgaaedeNavne"));
 		assertEquals("VitaminIndholdsstoffer", 228, jdbcTemplate.queryForInt("SELECT COUNT(*) from VitaminIndholdsstoffer"));
 
