@@ -15,3 +15,6 @@
 *  Opgrading til sdm4-core 4.3, der løser
    NSPSUPPORT-126: ParserExecutor logger filers absolutte stier og md5-summer inden parser behandler dem 
 *  NSPSUPPORT-183: Vitaminimporter opdaterer ikke ModifiedDate er rettet
+
+## vitaminimporter 4.6
+* Retter SDM-13 - Primær nøgle skal hedde PID for registeret kan kopieres
