@@ -65,12 +65,16 @@ public class VitaminRecordSpecs {
 		    field("kortFirmaMaerke", 20, false),
 		    field("parallelimportKode", 2, false));
     
-    public static final RecordSpecification UDGAAEDENAVNE_RECORD_SPEC = RecordSpecification.createSpecification("VitaminUdgaaedeNavne", "drugID", 
+    public static final RecordSpecification UDGAAEDENAVNE_RECORD_SPEC = RecordSpecification.createSpecification("VitaminUdgaaedeNavne", "Id",
+            // Id is calculatedField after records is parse so make sure it is set to ignored
+            field("Id", 40, false).calculated(),
             field("drugID", 11, false).numerical(),
             field("aendringsDato", 8, false),
             field("tidligereNavn", 50, false));
-    
-    public static final RecordSpecification INDHOLDSSTOFFER_RECORD_SPEC = RecordSpecification.createSpecification("VitaminIndholdsstoffer", "drugID", 
+
+    public static final RecordSpecification INDHOLDSSTOFFER_RECORD_SPEC = RecordSpecification.createSpecification("VitaminIndholdsstoffer", "Id",
+            // Id is calculatedField after records is parse so make sure it is set to ignored
+            field("Id", 40, false).calculated(),
             field("drugID", 11, false).numerical(),
 		    field("tom", 6, false).ignored(),
 		    field("stofklasse", 100, false),

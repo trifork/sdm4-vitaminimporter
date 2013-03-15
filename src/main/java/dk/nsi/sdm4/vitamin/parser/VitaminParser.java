@@ -33,6 +33,7 @@ import dk.nsi.sdm4.core.persistence.recordpersister.Record;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordFetcher;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordPersister;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordSpecification;
+import dk.nsi.sdm4.core.util.MD5Generator;
 import dk.nsi.sdm4.vitamin.exception.InvalidVitaminDatasetException;
 import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import dk.sdsd.nsp.slalog.api.SLALogItem;
@@ -108,7 +109,13 @@ public class VitaminParser implements Parser {
 			for (File file : datadir.listFiles()) {
 				RecordSpecification spec = specsForFiles.get(file.getName());
 				if (spec != null) {
-					processSingleFile(file, spec);
+                    if (spec == VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC ||
+                            spec == VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC) {
+                        // Disse records har udregnede strenge som id'er
+                        processSingleFile(String.class, file, spec);
+                    } else {
+                        processSingleFile(Long.class, file, spec);
+                    }
 				} else {
 					// hvis vi ikke har nogen spec, skal filen ikke processeres.
 					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en forventet situation og skal debug-logges
@@ -163,15 +170,17 @@ public class VitaminParser implements Parser {
 	}
 
 	// kun ikke-private for at tillade test, kaldes ikke udefra
-	void processSingleFile(File file, RecordSpecification spec) {
+    <T> void processSingleFile(Class<T> clazz, File file, RecordSpecification spec) {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing file " + file + " with spec " + spec.getClass().getSimpleName());
 		}
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser importer of file", file.getName());
 
 		try {
-			Set<Long> drugidsFromFile = parseAndPersistFile(file, spec);
-			invalidateRecordsRemovedFromFile(drugidsFromFile, spec);
+			Set<T> idsFromFile = parseAndPersistFile(file, spec);
+            // TODO THIS SHOULD BE DONE AFTER COMPLETE IMPORT NOT ONLY ONE FILE
+            // otherwise we will get old records disabled
+			invalidateRecordsRemovedFromFile(clazz, idsFromFile, spec);
 		} catch (RuntimeException e) {
 			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
@@ -183,26 +192,43 @@ public class VitaminParser implements Parser {
 		slaLogItem.store();
 	}
 
-	private Set<Long> parseAndPersistFile(File file, RecordSpecification spec) {
-		SingleLineRecordParser grunddataParser = new SingleLineRecordParser(spec);
-		Set<Long> drugidsFromFile = new HashSet<Long>();
+	private <T> Set<T> parseAndPersistFile(File file, RecordSpecification spec) {
+		SingleLineRecordParser singleLineParser = new SingleLineRecordParser(spec);
+		Set<T> idsFromFile = new HashSet<T>();
 
 		List<String> lines = readFile(file);// files are very small, it's okay to hold them in memory
 		if (log.isDebugEnabled()) log.debug("Read " + lines.size() + " lines from file " + file.getAbsolutePath());
 
 		for (String line : lines) {
 			if (log.isDebugEnabled()) log.debug("Processing line " + line);
-			Record record = grunddataParser.parseLine(line);
+			Record record = singleLineParser.parseLine(line);
 			if (log.isDebugEnabled()) log.debug("Parsed line to record " + record);
 
-			drugidsFromFile.add((Long) record.get(spec.getKeyColumn()));
+            // Calculate fields if udgaaedenavne or indholdsstoffer
+            if (spec == VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC) {
+                String rawId =
+                        record.get("aendringsDato") + "-" + record.get("tidligereNavn") + "-" + record.get("drugID");
+                record = md5AndAddIdToRecord(record, rawId);
+            } else if (spec == VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC) {
+                String rawId = record.get("substans") + "-" + record.get("substansgruppe") + "-" +
+                        record.get("stofklasse") + "-" + record.get("drugID");
+                record = md5AndAddIdToRecord(record, rawId);
+            }
+
+			idsFromFile.add((T) record.get(spec.getKeyColumn()));
 			persistRecordIfNeeeded(spec, record);
 		}
 
-		return drugidsFromFile;
+		return idsFromFile;
 	}
 
-	private List<String> readFile(File file) {
+    private Record md5AndAddIdToRecord(Record record, String rawId) {
+        String id = MD5Generator.makeMd5Identifier(rawId);
+        record.put("Id", id);
+        return record;
+    }
+
+    private List<String> readFile(File file) {
 		try {
 			return FileUtils.readLines(file, FILE_ENCODING);
 		} catch (IOException e) {
@@ -246,16 +272,21 @@ public class VitaminParser implements Parser {
 		}
 	}
 
-	private void invalidateRecordsRemovedFromFile(Set<Long> idsFromFile, RecordSpecification spec) {
-		// we'll compute the list of ids of record to be invalidated by fetching all the ids from the database, then weeding out all the ids that exist in the input file - these shouldn't be removed
-		Set<Long> idsToBeInvalidated = new HashSet<Long>(jdbcTemplate.queryForList("SELECT " + spec.getKeyColumn() + " from " + spec.getTable() + " WHERE ValidTo IS NULL", Long.class));
+    private <T> void invalidateRecordsRemovedFromFile(Class<T> clazz, Set<T> idsFromFile, RecordSpecification spec) {
+		// we'll compute the list of ids of record to be invalidated by fetching all the ids from the database,
+		// then weeding out all the ids that exist in the input file - these shouldn't be removed
+        List<T> idList = jdbcTemplate.queryForList("SELECT " + spec.getKeyColumn() + " from " + spec.getTable() +
+                " WHERE ValidTo IS NULL", clazz);
+
+        Set<T> idsToBeInvalidated = new HashSet<T>(idList);
 		idsToBeInvalidated.removeAll(idsFromFile);
 
 		if (!idsToBeInvalidated.isEmpty()) {
-            Date transaction = persister.getTransactionTime().toDateTime().toDate();
-            jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ?, ModifiedDate = ? WHERE " + spec.getKeyColumn() +
-                    " IN (" + StringUtils.join(idsToBeInvalidated, ',')  + ") AND ValidTo IS NULL",
-                    transaction, transaction);
+            Date transactionTime = persister.getTransactionTime().toDateTime().toDate();
+            for (T id : idsToBeInvalidated) {
+                jdbcTemplate.update("UPDATE " + spec.getTable() + " SET ValidTo = ?, ModifiedDate = ?  WHERE " + spec.getKeyColumn() +
+                        "=? AND ValidTo IS NULL", transactionTime, transactionTime, id);
+            }
 		}
 	}
 
