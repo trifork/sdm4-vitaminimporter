@@ -39,7 +39,6 @@ import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
 import dk.sdsd.nsp.slalog.api.SLALogItem;
 import dk.sdsd.nsp.slalog.api.SLALogger;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +69,11 @@ public class VitaminParser implements Parser {
 
 	@Autowired
 	private RecordFetcher fetcher;
+
+    private Set<String> udgaaedeIds;
+    private Set<String> indholdsStofferIds;
+    private Set<Long> firmaDataIds;
+    private Set<Long> grundDataIds;
 
 	private final Map<String, RecordSpecification> specsForFiles = new HashMap<String, RecordSpecification>() {
 		{
@@ -105,24 +109,37 @@ public class VitaminParser implements Parser {
 		validateDataset(datadir);
 
 		try {
-			assert datadir.listFiles() != null;
+            assert datadir.listFiles() != null;
+
+            resetIdLists();
+
+            // There are multiple input files of each specification so we need to store them all
+            // and invalidate all untouched after every file has been processed.
 			for (File file : datadir.listFiles()) {
-				RecordSpecification spec = specsForFiles.get(file.getName());
-				if (spec != null) {
-                    if (spec == VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC ||
-                            spec == VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC) {
-                        // Disse records har udregnede strenge som id'er
-                        processSingleFile(String.class, file, spec);
-                    } else {
-                        processSingleFile(Long.class, file, spec);
+			    RecordSpecification spec = specsForFiles.get(file.getName());
+                if (spec != null) {
+                    if (spec == VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC) {
+                        processUdgaaedeNavne(file);
+                    } else if (spec == VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC) {
+                        processIndholdsstoffer(file);
+                    } else if (spec == VitaminRecordSpecs.FIRMADATA_RECORD_SPEC) {
+                        processFirmaData(file);
+                    } else if (spec == VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC) {
+                        processGrunddata(file);
                     }
 				} else {
 					// hvis vi ikke har nogen spec, skal filen ikke processeres.
-					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en forventet situation og skal debug-logges
-					// Andre filer tyder på at noget er galt og skal warn-logges
+					// Filen kan fx være en slet01.txt fil som er med i de zippede udtræk fra LMS, så det er en
+					// forventet situation og skal debug-logges andre filer tyder på at noget er galt og skal warn-logges
 					log.log(levelForUnexpectedFile(file), "Ignoring file " + file.getAbsolutePath());
 				}
 			}
+            // Invalidate
+            invalidateRecordsRemovedFromFile(Long.class, firmaDataIds, VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+            invalidateRecordsRemovedFromFile(Long.class, grundDataIds, VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+            invalidateRecordsRemovedFromFile(String.class, udgaaedeIds, VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+            invalidateRecordsRemovedFromFile(String.class,
+                    indholdsStofferIds, VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
 		} catch (RuntimeException e) {
 			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
@@ -130,12 +147,42 @@ public class VitaminParser implements Parser {
 			throw new ParserException(e);
 		}
 
-
 		slaLogItem.setCallResultOk();
 		slaLogItem.store();
 	}
 
-	// kun ikke-private for at tillade test, kaldes ikke udefra
+    private void processGrunddata(File file) {
+        Set<Long> addedIds = processSingleFile(Long.class, grundDataIds, file,
+                VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
+        grundDataIds.addAll(addedIds);
+    }
+
+    private void processFirmaData(File file) {
+        Set<Long> addedIds = processSingleFile(Long.class, firmaDataIds, file,
+                VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
+        firmaDataIds.addAll(addedIds);
+    }
+
+    private void processIndholdsstoffer(File file) {
+        Set<String> addedIds = processSingleFile(String.class, indholdsStofferIds, file,
+                VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
+        indholdsStofferIds.addAll(addedIds);
+    }
+
+    private void processUdgaaedeNavne(File file) {
+        Set<String> addedIds = processSingleFile(String.class, udgaaedeIds, file,
+                VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
+        udgaaedeIds.addAll(addedIds);
+    }
+
+    private void resetIdLists() {
+        udgaaedeIds = new HashSet<String>();
+        indholdsStofferIds = new HashSet<String>();
+        firmaDataIds = new HashSet<Long>();
+        grundDataIds = new HashSet<Long>();
+    }
+
+    // kun ikke-private for at tillade test, kaldes ikke udefra
 	Level levelForUnexpectedFile(File file) {
 		Level logLevel;
 		if (file.getName().matches("slet\\d*.txt")) {
@@ -170,17 +217,15 @@ public class VitaminParser implements Parser {
 	}
 
 	// kun ikke-private for at tillade test, kaldes ikke udefra
-    <T> void processSingleFile(Class<T> clazz, File file, RecordSpecification spec) {
+    <T> Set<T> processSingleFile(Class<T> clazz, Set<T> alreadyImportedIds, File file, RecordSpecification spec) {
 		if (log.isDebugEnabled()) {
 			log.debug("Processing file " + file + " with spec " + spec.getClass().getSimpleName());
 		}
 		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser importer of file", file.getName());
 
+        Set<T> idsFromFile;
 		try {
-			Set<T> idsFromFile = parseAndPersistFile(file, spec);
-            // TODO THIS SHOULD BE DONE AFTER COMPLETE IMPORT NOT ONLY ONE FILE
-            // otherwise we will get old records disabled
-			invalidateRecordsRemovedFromFile(clazz, idsFromFile, spec);
+			idsFromFile = parseAndPersistFile(alreadyImportedIds, file, spec);
 		} catch (RuntimeException e) {
 			slaLogItem.setCallResultError("VitaminParser failed - Cause: " + e.getMessage());
 			slaLogItem.store();
@@ -190,9 +235,18 @@ public class VitaminParser implements Parser {
 
 		slaLogItem.setCallResultOk();
 		slaLogItem.store();
+        return idsFromFile;
 	}
 
-	private <T> Set<T> parseAndPersistFile(File file, RecordSpecification spec) {
+
+    /**
+     * Parse file and persist to database
+     * @param file file to read
+     * @param spec
+     * @param <T>
+     * @return
+     */
+	private <T> Set<T> parseAndPersistFile(Set<T> alreadyImportedIds, File file, RecordSpecification spec) {
 		SingleLineRecordParser singleLineParser = new SingleLineRecordParser(spec);
 		Set<T> idsFromFile = new HashSet<T>();
 
@@ -214,14 +268,21 @@ public class VitaminParser implements Parser {
                         record.get("stofklasse") + "-" + record.get("drugID");
                 record = md5AndAddIdToRecord(record, rawId);
             }
-
-			idsFromFile.add((T) record.get(spec.getKeyColumn()));
-			persistRecordIfNeeeded(spec, record);
+            if (!alreadyImportedIds.contains(record.get(spec.getKeyColumn()))) {
+                idsFromFile.add((T) record.get(spec.getKeyColumn()));
+                persistRecordIfNeeeded(spec, record);
+            }
 		}
 
 		return idsFromFile;
 	}
 
+    /**
+     * MD5 rawid and add it to a record Id field.
+     * @param record record which should have id added
+     * @param rawId id to md5
+     * @return the input record with Id field added
+     */
     private Record md5AndAddIdToRecord(Record record, String rawId) {
         String id = MD5Generator.makeMd5Identifier(rawId);
         record.put("Id", id);
@@ -236,17 +297,24 @@ public class VitaminParser implements Parser {
 		}
 	}
 
+    /**
+     * Persist a record if there is no equal record
+     * @param spec specefication
+     * @param record record to persist
+     */
 	private void persistRecordIfNeeeded(RecordSpecification spec, Record record) {
 		Record existingRecord = findRecordWithSameKey(record, spec);
 		if (existingRecord != null) {
 			if (existingRecord.equals(record)) {
 				// no need to do anything
-				if (log.isDebugEnabled()) log.debug("Ignoring record " + record + " for spec " + spec.getTable() + " as we have identical record in db");
+				if (log.isDebugEnabled()) log.debug("Ignoring record " + record + " for spec " + spec.getTable() +
+                        " as we have identical record in db");
 			} else {
-				if (log.isDebugEnabled()) log.debug("Setting validTo on database record " + existingRecord + " for spec " + spec.getTable() + " before insertion of new record " + record);
+				if (log.isDebugEnabled()) log.debug("Setting validTo on database record " + existingRecord + " for spec " +
+                        spec.getTable() + " before insertion of new record " + record);
                 Date transactionTime = persister.getTransactionTime().toDateTime().toDate();
-                jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ?, ModifiedDate=? WHERE " + spec.getKeyColumn() + " = ? AND ValidTo IS NULL",
-                        transactionTime, transactionTime,
+                jdbcTemplate.update("UPDATE " + spec.getTable() + " set ValidTo = ?, ModifiedDate=? WHERE " +
+                        spec.getKeyColumn() + " = ? AND ValidTo IS NULL", transactionTime, transactionTime,
 						existingRecord.get(spec.getKeyColumn()));
 				persist(record, spec);
 			}
@@ -256,6 +324,12 @@ public class VitaminParser implements Parser {
 		}
 	}
 
+    /**
+     * Fetch a record if it exist
+     * @param record record to find
+     * @param spec specification
+     * @return found record or null
+     */
 	private Record findRecordWithSameKey(Record record, RecordSpecification spec) {
 		try {
 			return fetcher.fetchCurrent(record.get(spec.getKeyColumn())+"", spec);
@@ -264,6 +338,11 @@ public class VitaminParser implements Parser {
 		}
 	}
 
+    /**
+     * Persist a record to file.
+     * @param record records to persist
+     * @param spec record specification
+     */
 	private void persist(Record record, RecordSpecification spec) {
 		try {
 			persister.persist(record, spec);
@@ -272,6 +351,13 @@ public class VitaminParser implements Parser {
 		}
 	}
 
+    /**
+     * Invalidate all records not in input set
+     * @param clazz class type
+     * @param idsFromFile set of id's that are still valid.
+     * @param spec records specification
+     * @param <T> type of id column
+     */
     private <T> void invalidateRecordsRemovedFromFile(Class<T> clazz, Set<T> idsFromFile, RecordSpecification spec) {
 		// we'll compute the list of ids of record to be invalidated by fetching all the ids from the database,
 		// then weeding out all the ids that exist in the input file - these shouldn't be removed

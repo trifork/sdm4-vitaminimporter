@@ -42,6 +42,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -133,23 +134,12 @@ public class VitaminParserSinglefilesIntegrationTest
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where PID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
 	}
 
-	@Test
-	public void closesExistingRowWhenDrugDisappearsFromDataFile() throws Exception {
-		importFile(Long.class, "data/sletning/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
-		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata WHERE ValidTo IS NULL")); // both drugs should be valid
-
-		importFile(Long.class, "data/sletning/nat01-slettet.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC); // i denne fil findes Drug med DrugID 28116104107 ikke længere
-		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata")); // no rows should be deleted
-
-		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where DrugID = ?", Timestamp.class, "28116104107"));
-	}
-
 	private Timestamp getTimestampFromPersister() {
 		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
 		return new Timestamp(persisterTimeWithMillisTruncated.getMillis());
 	}
 
 	private <T> void importFile(Class<T> clazz, String filePath, RecordSpecification spec) throws Exception {
-		parser.processSingleFile(clazz, new ClassPathResource(filePath).getFile(), spec);
+		parser.processSingleFile(clazz, new HashSet<T>(), new ClassPathResource(filePath).getFile(), spec);
 	}
 }
