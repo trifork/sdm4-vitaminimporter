@@ -29,6 +29,7 @@ package dk.nsi.sdm4.vitamin.integrationtest;
 import com.mysql.jdbc.Driver;
 import dk.nsi.sdm4.testutils.StatuspageChecker;
 import dk.nsi.sdm4.testutils.TestDbConfiguration;
+import dk.nsi.sdm4.vitamin.VitaminimporterApplicationTestConfig;
 import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,7 +60,7 @@ public class AllfilesAreImportedIT {
 	private static final int MAX_RETRIES=10;
 
 	@Configuration
-	@Import({VitaminimporterApplicationConfig.class, TestDbConfiguration.class})
+	@Import({VitaminimporterApplicationTestConfig.class, TestDbConfiguration.class})
 	static class TestConfiguration {
 		@Value("${test.mysql.port}")
 		private int mysqlPort;
