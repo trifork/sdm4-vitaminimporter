@@ -24,21 +24,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package dk.nsi.sdm4.vitamin.config;
+package dk.nsi.sdm4.vitamin;
 
-import dk.nsi.sdm4.core.parser.Parser;
 import dk.nsi.sdm4.core.persistence.recordpersister.RecordFetcher;
-import dk.nsi.sdm4.vitamin.parser.VitaminParser;
+import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Spring-konfiguration der ikke forventes at ændre sig mellem miljøer (fx test/produktion)
- */
 @Configuration
-public class VitaminimporterApplicationConfig {
-	@Bean
-	public Parser parser() {
-		return new VitaminParser();
-	}
+public class VitaminimporterApplicationTestConfig extends VitaminimporterApplicationConfig {
+
+    @Bean
+    public RecordFetcher fetcher() {
+        return new RecordFetcher();
+    }
 }

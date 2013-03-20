@@ -27,6 +27,7 @@
 package dk.nsi.sdm4.vitamin.parser;
 
 import dk.nsi.sdm4.testutils.TestDbConfiguration;
+import dk.nsi.sdm4.vitamin.VitaminimporterApplicationTestConfig;
 import dk.nsi.sdm4.vitamin.config.VitaminimporterApplicationConfig;
 import dk.nsi.sdm4.vitamin.exception.InvalidVitaminDatasetException;
 import dk.nsi.sdm4.vitamin.recordspecs.VitaminRecordSpecs;
@@ -52,7 +53,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
-@ContextConfiguration(classes = {VitaminimporterApplicationConfig.class, TestDbConfiguration.class})
+@ContextConfiguration(classes = {VitaminimporterApplicationTestConfig.class, TestDbConfiguration.class})
 public class VitaminParserDatasetsIntegrationTest
 {
 	@Rule

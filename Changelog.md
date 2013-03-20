@@ -19,3 +19,7 @@
 ## vitaminimporter 4.6
 * Retter SDM-13 - Primær nøgle skal hedde PID for registeret kan kopieres
 * Retter SDM-15 - Unikke nøgler på Indholdsstoffer og Udgaaede navne er ikke unikke
+
+## vitaminimporter 4.6
+* Rettet spring config der wirede den forkerte fetcher ind
+
