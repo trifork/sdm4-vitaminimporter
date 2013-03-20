@@ -111,15 +111,6 @@ public class VitaminParserSinglefilesIntegrationTest
 		assertEquals("savpalmefrugt (serenoa repens)", jdbcTemplate.queryForObject("SELECT Substansgruppe FROM VitaminIndholdsstoffer where DrugID=28116170104", String.class));
 	}
 
-	@Test
-	public void makesNoExtraRowsWhenImportingSameDataTwice() throws Exception {
-		importFile(Long.class, "data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
-		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-
-		importFile(Long.class, "data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
-		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-	}
-
 	private Timestamp getTimestampFromPersister() {
 		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
 		return new Timestamp(persisterTimeWithMillisTruncated.getMillis());
