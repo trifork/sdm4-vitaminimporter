@@ -120,21 +120,6 @@ public class VitaminParserSinglefilesIntegrationTest
 		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
 	}
 
-	@Test
-	public void closesExistingRowAndmakesNewRowWhenImportingSameDrugWithChangedData() throws Exception {
-		importFile(Long.class, "data/historik/nat01-1.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
-		assertEquals(1, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-		long oldestPid = jdbcTemplate.queryForLong("SELECT PID FROM VitaminGrunddata");
-
-		importFile(Long.class, "data/historik/nat01-2.txt", VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
-		assertEquals(2, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM VitaminGrunddata"));
-		long newestPid = jdbcTemplate.queryForLong("SELECT PID FROM VitaminGrunddata WHERE ValidTo IS NULL");
-
-		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidTo from VitaminGrunddata where PID = ?", Timestamp.class, oldestPid));
-		assertEquals(getTimestampFromPersister(), jdbcTemplate.queryForObject("SELECT ValidFrom from VitaminGrunddata where PID = ?", Timestamp.class, newestPid));
-		assertEquals(1, jdbcTemplate.queryForInt("SELECT Count(*) from VitaminGrunddata where PID = ? AND ValidTo IS NULL", newestPid)); // assert that the new record has no ValidTo
-	}
-
 	private Timestamp getTimestampFromPersister() {
 		DateTime persisterTimeWithMillisTruncated = persister.getTransactionTime().toDateTime().withMillisOfSecond(0);
 		return new Timestamp(persisterTimeWithMillisTruncated.getMillis());
