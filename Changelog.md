@@ -23,3 +23,8 @@
 ## vitaminimporter 4.7
 * Rettet spring config der wirede den forkerte fetcher ind
 
+## vitaminimporter 4.8
+*  Opdateret SDM4 depencencies
+*  SDM-5 SLA-log fra SDM4-importere følger ikke standarden
+*  Tilføjet kopi register view, så kopi register service maps nu bliver oprettet automatisk
+

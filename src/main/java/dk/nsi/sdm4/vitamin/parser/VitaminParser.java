@@ -103,11 +103,13 @@ public class VitaminParser implements Parser {
 	 */
 	@Override
 	@Transactional(propagation = Propagation.MANDATORY)
-	public void process(File datadir) throws ParserException {
-		SLALogItem slaLogItem = slaLogger.createLogItem("VitaminParser", "All");
+	public void process(File datadir, String identifier) throws ParserException {
+        SLALogItem slaLogItem = slaLogger.createLogItem(getHome()+".process", "SDM4."+getHome()+".process");
+        slaLogItem.setMessageId(identifier);
+        validateDataset(datadir);
+        slaLogItem.addCallParameter(Parser.SLA_INPUT_NAME, datadir.getAbsolutePath());
 
-		validateDataset(datadir);
-
+        long processed = 0;
 		try {
             assert datadir.listFiles() != null;
 
@@ -119,13 +121,13 @@ public class VitaminParser implements Parser {
 			    RecordSpecification spec = specsForFiles.get(file.getName());
                 if (spec != null) {
                     if (spec == VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC) {
-                        processUdgaaedeNavne(file);
+                        processed += processUdgaaedeNavne(file);
                     } else if (spec == VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC) {
-                        processIndholdsstoffer(file);
+                        processed += processIndholdsstoffer(file);
                     } else if (spec == VitaminRecordSpecs.FIRMADATA_RECORD_SPEC) {
-                        processFirmaData(file);
+                        processed += processFirmaData(file);
                     } else if (spec == VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC) {
-                        processGrunddata(file);
+                        processed += processGrunddata(file);
                     }
 				} else {
 					// hvis vi ikke har nogen spec, skal filen ikke processeres.
@@ -146,33 +148,37 @@ public class VitaminParser implements Parser {
 
 			throw new ParserException(e);
 		}
-
+        slaLogItem.addCallParameter(Parser.SLA_RECORDS_PROCESSED_MAME, ""+processed);
 		slaLogItem.setCallResultOk();
 		slaLogItem.store();
 	}
 
-    private void processGrunddata(File file) {
+    private long processGrunddata(File file) {
         Set<Long> addedIds = processSingleFile(Long.class, grundDataIds, file,
                 VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC);
         grundDataIds.addAll(addedIds);
+        return addedIds.size();
     }
 
-    private void processFirmaData(File file) {
+    private long processFirmaData(File file) {
         Set<Long> addedIds = processSingleFile(Long.class, firmaDataIds, file,
                 VitaminRecordSpecs.FIRMADATA_RECORD_SPEC);
         firmaDataIds.addAll(addedIds);
+        return addedIds.size();
     }
 
-    private void processIndholdsstoffer(File file) {
+    private long processIndholdsstoffer(File file) {
         Set<String> addedIds = processSingleFile(String.class, indholdsStofferIds, file,
                 VitaminRecordSpecs.INDHOLDSSTOFFER_RECORD_SPEC);
         indholdsStofferIds.addAll(addedIds);
+        return addedIds.size();
     }
 
-    private void processUdgaaedeNavne(File file) {
+    private long processUdgaaedeNavne(File file) {
         Set<String> addedIds = processSingleFile(String.class, udgaaedeIds, file,
                 VitaminRecordSpecs.UDGAAEDENAVNE_RECORD_SPEC);
         udgaaedeIds.addAll(addedIds);
+        return addedIds.size();
     }
 
     private void resetIdLists() {

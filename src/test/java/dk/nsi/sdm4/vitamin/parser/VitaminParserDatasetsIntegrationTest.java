@@ -70,7 +70,7 @@ public class VitaminParserDatasetsIntegrationTest
 		File dataDirWhichIsNotADirectory = new ClassPathResource("data/vitaminer/nat01.txt").getFile();
 
 		try {
-			parser.process(dataDirWhichIsNotADirectory);
+			parser.process(dataDirWhichIsNotADirectory, "");
 			fail("Expected InvalidVitaminDatasetException, but none came");
 		} catch (InvalidVitaminDatasetException e) {
 			assertTrue(e.getMessage().contains("not a directory"));
@@ -81,7 +81,7 @@ public class VitaminParserDatasetsIntegrationTest
 	@Test
 	public void shouldComplainIfDatadirIsNull() throws IOException {
 		try {
-			parser.process(null);
+			parser.process(null, "");
 			fail("Expected InvalidVitaminDatasetException, but none came");
 		} catch (InvalidVitaminDatasetException e) {
 			assertTrue(e.getMessage().contains("null"));
@@ -94,7 +94,7 @@ public class VitaminParserDatasetsIntegrationTest
 		assertTrue(unreadableDataset.setReadable(false)); // the assert is just to make sure we can set the permission, not part of the test
 
 		try {
-			parser.process(unreadableDataset);
+			parser.process(unreadableDataset, "");
 			fail("Expected InvalidVitaminDatasetException, but none came");
 		} catch (InvalidVitaminDatasetException e) {
 			assertTrue(e.getMessage().contains("is not readable"));
@@ -108,7 +108,7 @@ public class VitaminParserDatasetsIntegrationTest
 		File dataDirWithMissingFile = new ClassPathResource("data/vitaminer-mangler-en-fil").getFile();
 
 		try {
-			parser.process(dataDirWithMissingFile);
+			parser.process(dataDirWithMissingFile, "");
 			fail("Expected InvalidVitaminDatasetException, but none came");
 		} catch (InvalidVitaminDatasetException e) {
 			assertTrue(e.getMessage().contains("nat10.txt")); // det er den fil der mangler
@@ -118,13 +118,13 @@ public class VitaminParserDatasetsIntegrationTest
 	@Test
 	public void shouldNotComplainIfDataDirContainsExtraFiles() throws IOException {
 		File dataDirWithExtraFile = new ClassPathResource("data/vitaminer-med-slet-fil").getFile();
-		parser.process(dataDirWithExtraFile);
+		parser.process(dataDirWithExtraFile, "");
 	}
 
 	@Test
 	public void shouldImportAllThree01txtFiles() throws IOException {
 		File dataDirWithExtraFile = new ClassPathResource("data/vitaminer-med-alle-01").getFile();
-		parser.process(dataDirWithExtraFile);
+		parser.process(dataDirWithExtraFile, "");
 		assertEquals(3, jdbcTemplate.queryForInt("SELECT COUNT(*) FROM " + VitaminRecordSpecs.GRUNDDATA_RECORD_SPEC.getTable()));
 	}
 }
