@@ -60,8 +60,8 @@ public class AllfilesAreImportedIT {
 	private static final int MAX_RETRIES=10;
 
 	@Configuration
-	@Import({VitaminimporterApplicationTestConfig.class, TestDbConfiguration.class})
-	static class TestConfiguration {
+	@Import({VitaminimporterApplicationTestConfig.class})
+	static class TestConfiguration extends TestDbConfiguration {
 		@Value("${test.mysql.port}")
 		private int mysqlPort;
 		private String db_username = "root";
@@ -69,7 +69,8 @@ public class AllfilesAreImportedIT {
 
 		@Bean
 		@Primary
-		public DataSource dataSourceTalkingToRealDatabase() throws Exception {
+        @Override
+		public DataSource dataSource() throws Exception {
 			String jdbcUrlPrefix = "jdbc:mysql://127.0.0.1:" + mysqlPort + "/";
 			return new SimpleDriverDataSource(new Driver(), jdbcUrlPrefix + "sdm_warehouse", db_username, db_password);
 		}
